@@ -20,7 +20,7 @@ def _generate_real_samples(dataset, n_samples):
 	return [X, labels], y
 
 # Sinh ra các véc tơ noise trong không gian latent space làm đầu vào cho generator
-def _generate_latent_points(latent_dim, n_samples, n_classes=10):
+def _generate_latent_points(latent_dim, n_samples, n_classes=100):
 	# Khởi tạo các points trong latent space
 	x_input = np.random.randn(latent_dim * n_samples)
 	# reshape thành batch để feed vào generator.
