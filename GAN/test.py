@@ -1,8 +1,12 @@
 from tensorflow.keras.layers import Input, Embedding
+import models
 
-n_classes = 10
-# 1. Khởi tạo nhánh input là y_label
-y_label = Input(shape=(1,))
-# Embedding y_label và chiếu lên không gian véctơ 50 dimension.
-y_embedding = Embedding(n_classes, 50)(y_label)
-print(y_embedding)
+latent_dim = 100
+d_model = models._discriminator()
+# Lấy đầu vào của generator model bao gồm véc tơ noise và nhãn
+gen_noise1, gen_label1 = d_model.input
+# Lấy ảnh sinh ra từ generator model
+gen_output1 = d_model.output
+print(gen_noise1)
+print(gen_label1)
+print(gen_output1)

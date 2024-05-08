@@ -33,6 +33,8 @@ def _generate_latent_points(latent_dim, n_samples, n_classes=100):
 def _generate_fake_samples(generator, latent_dim, n_samples):
 	# Khởi tạo các điểm ngẫu nhiên trong latent space.
 	z_input, labels_input = _generate_latent_points(latent_dim, n_samples)
+	# print(z_input.shape)
+	# print(labels_input.shape)
 	# Dự đoán outputs từ generator
 	images = generator.predict([z_input, labels_input])
 	# Khởi tạo nhãn 0 cho ảnh fake

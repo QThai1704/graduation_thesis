@@ -1,7 +1,7 @@
 import utils
 import numpy as np
 
-def _train(g_model, d_model, cgan_model, dataset, latent_dim, n_epochs=100, n_batch=128, save_every_epochs=10):
+def _train(g_model, d_model, cgan_model, dataset, latent_dim, n_epochs=30, n_batch=128, save_every_epochs=3):
 	'''
 	g_model: generator model
 	d_model: discriminator model
@@ -12,6 +12,9 @@ def _train(g_model, d_model, cgan_model, dataset, latent_dim, n_epochs=100, n_ba
 	n_batch: Kích thước batch_size
 	save_every_epochs: Số lượng epochs mà chúng ta sẽ save model.
 	'''
+	print('Start training...')
+	# Hiển thị bộ dữ liệu bỏ đi tham số cuối cùng
+	print(dataset[0].shape)
 	# Tính số lượng batch trên một epochs
 	batch_per_epoch = int(dataset[0].shape[0] / n_batch)
 	half_batch = int(n_batch / 2)
@@ -22,12 +25,17 @@ def _train(g_model, d_model, cgan_model, dataset, latent_dim, n_epochs=100, n_ba
 			# 1. Huấn luyện model discrinator
 			# Khởi tạo batch cho ảnh real ngẫu nhiên
 			[X_real, labels_real], y_real = utils._generate_real_samples(dataset, half_batch)
+			# print(X_real.shape)
+			# print(labels_real.shape)
 			# Cập nhật discriminator model weights
 			d_loss1, _ = d_model.train_on_batch([X_real, labels_real], y_real)
 			# Khởi tạo batch cho ảnh fake ngẫu nhiên
 			[X_fake, labels], y_fake = utils._generate_fake_samples(g_model, latent_dim, half_batch)
+			print(X_fake.shape)
+			print(labels.shape)
 			# Cập nhật weights cho discriminator model
 			d_loss2, _ = d_model.train_on_batch([X_fake, labels], y_fake)
+			print(d_loss2.shape)
 	 		# 2. Huấn luyện model generator
 			# Khởi tạo các điểm ngẫu nhiên trong latent space như là đầu vào cho generator
 			[z_input, labels_input] = utils._generate_latent_points(latent_dim, n_batch)

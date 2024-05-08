@@ -8,9 +8,9 @@ def _discriminator(input_shape=(32, 32, 3), n_classes = 100):
   # Embedding y_label và chiếu lên không gian véc tơ 50 kích thước.
   y_embedding = Embedding(n_classes, 50)(y_label)
   # Gia tăng kích thước y_embedding thông qua linear projection
-  n_shape = input_shape[0] * input_shape[1] * input_shape[2]
+  n_shape = input_shape[0] * input_shape[1]
   li = Dense(n_shape)(y_embedding)
-  li = Reshape((input_shape[0], input_shape[1], input_shape[2]))(li)
+  li = Reshape((input_shape[0], input_shape[1], 1))(li)
 
   # 2. Khởi tạo nhánh input là image
   inpt_image = Input(shape=(32, 32, 3))
@@ -38,7 +38,7 @@ def _discriminator(input_shape=(32, 32, 3), n_classes = 100):
 
   # Khởi tạo model
   model = Model([inpt_image, y_label], out_layer)
-  opt = Adam(lr=0.0002, beta_1=0.5)
+  opt = Adam(learning_rate=0.0002, beta_1=0.5)
   model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
   return model
 
@@ -47,6 +47,7 @@ def _generator(latent_dim=100, n_classes=100):
   y_label = Input(shape=(1,))
   # embedding véc tơ phân loại đầu vào
   li = Embedding(n_classes, 50)(y_label)
+  li = Flatten()(li)
   n_shape = 8 * 8
   li = Dense(n_shape)(li)
   # reshape lại đầu vào về kích thước 8x8x1 như một channel bổ sung.
@@ -57,11 +58,19 @@ def _generator(latent_dim=100, n_classes=100):
   n_shape = 128 * 8 * 8
   gen = Dense(n_shape)(in_lat)
   # gen = LeakyReLU(alpha=0.2)(gen)
-  # Biến đổi về kích thước 7x7x128
+  # Biến đổi về kích thước 8x8x128
   gen = Reshape((8, 8, 128))(gen)
 
   # 3. Merge nhánh 1 và nhánh 2
   merge = Concatenate()([gen, li])
+  # Get the current shape of the tensor and add 1 at the end
+  current_shape = list(merge.get_shape())
+  new_shape = current_shape + [1]
+  print(new_shape)
+
+  # Reshape the tensor
+  merge = Reshape(new_shape)(merge)
+  print("Merge",type(merge.shape))
 
   # 4. Sử dụng Conv2DTranspose để giải chập về kích thước ban đầu.
   gen = Conv2DTranspose(128, (4,4), strides=(2,2), padding='same')(merge)
@@ -70,26 +79,26 @@ def _generator(latent_dim=100, n_classes=100):
   gen = Conv2DTranspose(64, (4,4), strides=(2,2), padding='same')(gen)
   gen = LeakyReLU(alpha=0.2)(gen)
 
-  gen = Conv2DTranspose(32, (4,4), strides=(2,2), padding='same')(gen)
+  gen = Conv2DTranspose(32, (4,4), strides=(1,1), padding='same')(gen)
   gen = LeakyReLU(alpha=0.2)(gen)
 
   # output
-  out_layer = Conv2D(3, (4,4), activation='tanh', padding='same')(gen)
+  out_layer = Conv2D(3, (3,3), activation='tanh', padding='same')(gen)
   # model
   model = Model([in_lat, y_label], out_layer)
   return model
 
 def _cgan(g_model, d_model):
-	# Do cgan được sử dụng để huấn luyện generator nên discriminator sẽ được đóng băng
-	d_model.trainable = False
-	# Lấy đầu vào của generator model bao gồm véc tơ noise và nhãn
-	gen_noise, gen_label = g_model.input
-	# Lấy ảnh sinh ra từ generator model
-	gen_output = g_model.output
-	# Truyền output và nhãn của mô hình generator vào mô hình discriminator
-	gan_output = d_model([gen_output, gen_label])
-	# Khởi tạo mô hình CGAN
-	model = Model([gen_noise, gen_label], gan_output)
-	opt = Adam(lr=0.0002, beta_1=0.5)
-	model.compile(loss='binary_crossentropy', optimizer=opt)
-	return model
+  # Do cgan được sử dụng để huấn luyện generator nên discriminator sẽ được đóng băng
+  d_model.trainable = False
+  # Lấy đầu vào của generator model bao gồm véc tơ noise và nhãn
+  gen_noise, gen_label = g_model.input
+  # Lấy ảnh sinh ra từ generator model
+  gen_output = g_model.output
+  # Truyền output và nhãn của mô hình generator vào mô hình discriminator
+  gan_output = d_model([gen_output, gen_label])
+  # Khởi tạo mô hình CGAN
+  model = Model([gen_noise, gen_label], gan_output)
+  opt = Adam(learning_rate=0.0002, beta_1=0.5)
+  model.compile(loss='binary_crossentropy', optimizer=opt)
+  return model
