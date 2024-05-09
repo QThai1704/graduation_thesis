@@ -1,5 +1,6 @@
 import numpy as np
-
+from keras import backend as K
+from tensorflow.keras.layers import Lambda
 # Hàm chuẩn hóa dữ liệu huấn luyện
 def _standardize_data(X_train, y_train):
 	X = np.expand_dims(X_train, axis=-1)
@@ -27,14 +28,13 @@ def _generate_latent_points(latent_dim, n_samples, n_classes=100):
 	z_input = x_input.reshape(n_samples, latent_dim)
 	# khởi tạo labels một cách ngẫu nhiên.
 	labels = np.random.randint(0, n_classes, n_samples)
+	labels = Lambda(lambda x: K.expand_dims(x, axis=-1))(labels)
 	return [z_input, labels]
  
 # Sử dụng generator để sinh ra n_samples ảnh fake.
 def _generate_fake_samples(generator, latent_dim, n_samples):
 	# Khởi tạo các điểm ngẫu nhiên trong latent space.
 	z_input, labels_input = _generate_latent_points(latent_dim, n_samples)
-	# print(z_input.shape)
-	# print(labels_input.shape)
 	# Dự đoán outputs từ generator
 	images = generator.predict([z_input, labels_input])
 	# Khởi tạo nhãn 0 cho ảnh fake

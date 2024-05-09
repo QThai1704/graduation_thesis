@@ -25,17 +25,16 @@ def _train(g_model, d_model, cgan_model, dataset, latent_dim, n_epochs=30, n_bat
 			# 1. Huấn luyện model discrinator
 			# Khởi tạo batch cho ảnh real ngẫu nhiên
 			[X_real, labels_real], y_real = utils._generate_real_samples(dataset, half_batch)
-			# print(X_real.shape)
-			# print(labels_real.shape)
 			# Cập nhật discriminator model weights
 			d_loss1, _ = d_model.train_on_batch([X_real, labels_real], y_real)
 			# Khởi tạo batch cho ảnh fake ngẫu nhiên
 			[X_fake, labels], y_fake = utils._generate_fake_samples(g_model, latent_dim, half_batch)
 			print(X_fake.shape)
 			print(labels.shape)
+			print(y_fake.shape)
 			# Cập nhật weights cho discriminator model
-			d_loss2, _ = d_model.train_on_batch([X_fake, labels], y_fake)
-			print(d_loss2.shape)
+			d_loss2, _ = d_model.train_on_batch([X_fake, labels], y_fake) #Fix here
+
 	 		# 2. Huấn luyện model generator
 			# Khởi tạo các điểm ngẫu nhiên trong latent space như là đầu vào cho generator
 			[z_input, labels_input] = utils._generate_latent_points(latent_dim, n_batch)

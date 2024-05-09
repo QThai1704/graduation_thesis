@@ -1,12 +1,13 @@
-from tensorflow.keras.layers import Input, Conv2D, Conv2DTranspose, Dense, LeakyReLU, Embedding, Concatenate, Reshape, Flatten, Dropout
+from tensorflow.keras.layers import Input, Conv2D, Conv2DTranspose, Dense, LeakyReLU, Embedding, Concatenate, Reshape, Flatten, Dropout, Lambda
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
+from keras import backend as K
 
 def _discriminator(input_shape=(32, 32, 3), n_classes = 100):
   # 1. Khởi tạo nhánh input là y_label
   y_label = Input(shape=(1,))
   # Embedding y_label và chiếu lên không gian véc tơ 50 kích thước.
-  y_embedding = Embedding(n_classes, 50)(y_label)
+  y_embedding = Embedding(n_classes, 65)(y_label)
   # Gia tăng kích thước y_embedding thông qua linear projection
   n_shape = input_shape[0] * input_shape[1]
   li = Dense(n_shape)(y_embedding)
@@ -44,34 +45,26 @@ def _discriminator(input_shape=(32, 32, 3), n_classes = 100):
 
 def _generator(latent_dim=100, n_classes=100):
   # 1. Khởi tạo nhánh đầu vào là y_label
-  y_label = Input(shape=(1,))
+  y_label = Input(shape=(1))
   # embedding véc tơ phân loại đầu vào
-  li = Embedding(n_classes, 50)(y_label)
-  li = Flatten()(li)
+  li = Embedding(n_classes, 65)(y_label)
   n_shape = 8 * 8
   li = Dense(n_shape)(li)
   # reshape lại đầu vào về kích thước 8x8x1 như một channel bổ sung.
   li = Reshape((8, 8, 1))(li)
+  print(li.shape)
+  
 
   # 2. Khởi tạo nhánh đầu vào là véc tơ noise x
   in_lat = Input(shape=(latent_dim,))
   n_shape = 128 * 8 * 8
   gen = Dense(n_shape)(in_lat)
-  # gen = LeakyReLU(alpha=0.2)(gen)
+  gen = LeakyReLU(alpha=0.2)(gen)
   # Biến đổi về kích thước 8x8x128
   gen = Reshape((8, 8, 128))(gen)
 
   # 3. Merge nhánh 1 và nhánh 2
   merge = Concatenate()([gen, li])
-  # Get the current shape of the tensor and add 1 at the end
-  current_shape = list(merge.get_shape())
-  new_shape = current_shape + [1]
-  print(new_shape)
-
-  # Reshape the tensor
-  merge = Reshape(new_shape)(merge)
-  print("Merge",type(merge.shape))
-
   # 4. Sử dụng Conv2DTranspose để giải chập về kích thước ban đầu.
   gen = Conv2DTranspose(128, (4,4), strides=(2,2), padding='same')(merge)
   gen = LeakyReLU(alpha=0.2)(gen)
@@ -84,6 +77,7 @@ def _generator(latent_dim=100, n_classes=100):
 
   # output
   out_layer = Conv2D(3, (3,3), activation='tanh', padding='same')(gen)
+  out_layer = Lambda(lambda x: K.expand_dims(x, axis=-1))(out_layer)
   # model
   model = Model([in_lat, y_label], out_layer)
   return model
